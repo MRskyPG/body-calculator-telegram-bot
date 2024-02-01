@@ -48,6 +48,8 @@ func main() {
 			commands(update)
 		} else {
 			//messages
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu")
+			sendMessage(msg)
 		}
 	}
 
@@ -75,6 +77,9 @@ func commands(update tgbotapi.Update) {
 	case "menu":
 		msg := tgbotapi.NewMessage(chatId, "Выберите необходимую опцию:")
 		msg.ReplyMarkup = menu
+		sendMessage(msg)
+	default:
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu")
 		sendMessage(msg)
 	}
 }
