@@ -8,10 +8,11 @@ import (
 )
 
 var (
-	bot           *tgbotapi.BotAPI
-	start_message = "Привет! Данный калькулятор позволит рассчитать ИМТ, количество калорий, которое необходимо " +
-		"вашему организму в зависимости от вашего роста, веса, возраста и степени физической активности. Выберите, что хотите рассчитать:"
-	start_menu = tgbotapi.NewInlineKeyboardMarkup(
+	bot          *tgbotapi.BotAPI
+	startMessage = "Привет! Данный калькулятор позволит рассчитать ИМТ, количество калорий, которое необходимо " +
+		"вашему организму в зависимости от вашего роста, веса, возраста и степени физической активности. Для начала перейдите в меню:"
+	goToMenu = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Меню", "menu")))
+	menu     = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("ИМТ", "BMI"),
 		),
@@ -53,17 +54,28 @@ func main() {
 }
 
 func callbacks(update tgbotapi.Update) {
-
+	cb := update.CallbackQuery.Data
+	chatId := update.CallbackQuery.Message.Chat.ID
+	switch cb {
+	case "menu":
+		msg := tgbotapi.NewMessage(chatId, "Выберите необходимую опцию:")
+		msg.ReplyMarkup = menu
+		sendMessage(msg)
+	}
 }
 
 func commands(update tgbotapi.Update) {
 	command := update.Message.Command()
+	chatId := update.Message.Chat.ID
 	switch command {
 	case "start":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, start_message)
-		msg.ReplyMarkup = start_menu
+		msg := tgbotapi.NewMessage(chatId, startMessage)
+		msg.ReplyMarkup = goToMenu
 		sendMessage(msg)
-
+	case "menu":
+		msg := tgbotapi.NewMessage(chatId, "Выберите необходимую опцию:")
+		msg.ReplyMarkup = menu
+		sendMessage(msg)
 	}
 }
 
