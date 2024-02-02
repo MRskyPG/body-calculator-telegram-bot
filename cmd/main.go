@@ -14,7 +14,7 @@ var (
 	goToMenu = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Меню", "menu")))
 	menu     = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("ИМТ", "BMI"),
+			tgbotapi.NewInlineKeyboardButtonData("ИМТ", "bmi"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Норма калорий", "calories"),
