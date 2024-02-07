@@ -90,7 +90,8 @@ func callbacks(update tgbotapi.Update) {
 		bot.Send(msg)
 
 		userStates[chatID] = WeightState
-
+	case "calories":
+		/*TODO*/
 	}
 }
 
@@ -164,12 +165,13 @@ func chooseState(userStates map[int64]UserState, update tgbotapi.Update) {
 		bmi.Height = height
 		bmiValue := bmi.CalcBMI()
 
-		msg := tgbotapi.NewMessage(chatId, "Ваш ИМТ: "+strconv.FormatFloat(bmiValue, 'f', 2, 64))
+		bmiInfo := bodycalc.DefineBMI(bmiValue)
+
+		msg := tgbotapi.NewMessage(chatId, "Ваш ИМТ: "+strconv.FormatFloat(bmiValue, 'f', 2, 64)+". "+bmiInfo)
 		bot.Send(msg)
 
 		userStates[chatId] = InitialState
 
 	}
 
-	//TODO: more info about bmi
 }
