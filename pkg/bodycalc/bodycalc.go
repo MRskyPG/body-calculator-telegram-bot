@@ -1,10 +1,27 @@
 package bodycalc
 
+import "math"
+
+// For Daily Norm Of Calories
+const (
+	MINIMAL  = 1.2
+	LIGHT    = 1.35
+	MEDIUM   = 1.55
+	HIGH     = 1.75
+	EXTREMAL = 1.95
+)
+
 type UserState int
 
 type BMI struct {
-	Height float64 //cm
-	Weight float64 //kg
+	Height, Weight float64 //cm, kg
+}
+
+type DailyNormOfCalories struct {
+	Sex            string
+	Height, Weight float64
+	Age            uint8
+	Activity       float64
 }
 
 func NewBMI(h float64, w float64) *BMI {
@@ -38,4 +55,21 @@ func DefineBMI(bmi float64) string {
 	default:
 		return "Ожирение третьей степени (морбидное)."
 	}
+}
+
+func NewDailyNormOfCalories(sex string, h float64, w float64, age uint8, activity float64) *DailyNormOfCalories {
+	return &DailyNormOfCalories{sex, h, w, age, activity}
+}
+
+func (c *DailyNormOfCalories) CalculateDailyNormOfCalories() int {
+	basalMetabolism := 0.0
+	switch c.Sex {
+	case "male":
+		basalMetabolism = 9.99*c.Weight + 6.25*c.Height - 4.92*float64(c.Age) + 5.0
+	case "female":
+		basalMetabolism = 9.99*c.Weight + 6.25*c.Height - 4.92*float64(c.Age) - 161.0
+	}
+	dnoc := basalMetabolism * c.Activity
+	return int(math.Round(dnoc))
+
 }

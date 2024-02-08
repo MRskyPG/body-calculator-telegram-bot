@@ -68,7 +68,7 @@ func main() {
 		} else if update.Message.IsCommand() {
 			commands(update)
 		} else if update.Message != nil {
-			chooseState(userStates, update)
+			chooseState(update, userStates)
 		}
 	}
 
@@ -122,7 +122,7 @@ func sendMessage(msg tgbotapi.Chattable) {
 	log.Println("Message was sended.")
 }
 
-func chooseState(userStates map[int64]UserState, update tgbotapi.Update) {
+func chooseState(update tgbotapi.Update, userStates map[int64]UserState) {
 	chatId := update.Message.Chat.ID
 	switch userStates[chatId] {
 	case InitialState:
