@@ -1,6 +1,8 @@
 package bodycalc
 
-import "math"
+import (
+	"math"
+)
 
 // For Daily Norm Of Calories
 const (
