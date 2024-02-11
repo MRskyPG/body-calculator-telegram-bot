@@ -9,20 +9,53 @@ import (
 	"strconv"
 )
 
+type UserState int
+
+const (
+	InitialState UserState = iota
+	WeightStateBMI
+	HeightStateBMI
+	SexStateDNOC
+	WeightStateDNOC
+	HeightStateDNOC
+	AgeStateDNOC
+	ActivityStateDNOC
+)
+
+const (
+	minWeight       = 3.0
+	maxWeight       = 450.0
+	minHeight       = 40.0
+	maxHeight       = 225.0
+	minAge          = 0
+	maxAge          = 100
+	EMOJI_CHECKMARK = "\U00002705"
+	EMOJI_BACK      = "\U0001F519"
+	EMOJI_PLAY      = "\U000025B6"
+	EMOJI_HI        = "\U0001F44B"
+	EMOJI_ONE       = "\U00000031\U0000FE0F\U000020E3 "
+	EMOJI_TWO       = "\U00000032\U0000FE0F\U000020E3 "
+	EMOJI_THREE     = "\U00000033\U0000FE0F\U000020E3 "
+	EMOJI_FOUR      = "\U00000034\U0000FE0F\U000020E3 "
+	EMOJI_FIVE      = "\U00000035\U0000FE0F\U000020E3 "
+	EMOJI_MAN       = " \U0001F468"
+	EMOJI_WOMAN     = " \U0001F469"
+)
+
 var (
 	Bot          *tgbotapi.BotAPI
 	bmi          = bodycalc.NewBMI(0.0, 0.0)
 	calories     = bodycalc.NewDailyNormOfCalories("", 0.0, 0.0, 0, 0.0)
 	UserStates   map[int64]UserState
-	startMessage = "Привет! Данный калькулятор позволит рассчитать ИМТ, количество калорий, которое необходимо " +
-		"вашему организму в зависимости от вашего роста, веса, возраста и степени физической активности. Для начала перейдите в меню:"
-	goToMenu = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Меню", "menu")))
+	startMessage = "Привет " + EMOJI_HI + " Данный калькулятор позволит рассчитать ИМТ, количество калорий, которое необходимо " +
+		"вашему организму в зависимости от вашего роста, веса, возраста и степени физической активности.\nДля начала перейдите в меню:"
+	goToMenu = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Меню "+EMOJI_PLAY, "menu")))
 	menu     = tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("ИМТ", "bmi"),
+			tgbotapi.NewInlineKeyboardButtonData(EMOJI_ONE+"ИМТ", "bmi"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Норма калорий", "calories"),
+			tgbotapi.NewInlineKeyboardButtonData(EMOJI_TWO+"Норма калорий", "calories"),
 		),
 	)
 	activitiesMenu = tgbotapi.NewInlineKeyboardMarkup(
@@ -43,30 +76,8 @@ var (
 		),
 	)
 	sexMenu = tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Мужской", "male")),
-		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Женский", "female")))
-)
-
-type UserState int
-
-const (
-	InitialState UserState = iota
-	WeightStateBMI
-	HeightStateBMI
-	SexStateDNOC
-	WeightStateDNOC
-	HeightStateDNOC
-	AgeStateDNOC
-	ActivityStateDNOC
-)
-
-const (
-	minWeight = 3.0
-	maxWeight = 450.0
-	minHeight = 40.0
-	maxHeight = 225.0
-	minAge    = 0
-	maxAge    = 100
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Мужской"+EMOJI_MAN, "male")),
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Женский"+EMOJI_WOMAN, "female")))
 )
 
 func Callbacks(update tgbotapi.Update) {
@@ -135,7 +146,7 @@ func Commands(update tgbotapi.Update) {
 		msg.ReplyMarkup = menu
 		sendMessage(msg)
 	default:
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu")
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu "+EMOJI_BACK)
 		sendMessage(msg)
 	}
 }
@@ -153,7 +164,7 @@ func ChooseState(update tgbotapi.Update, userStates map[int64]UserState) {
 	case InitialState:
 		bmi = bodycalc.NewBMI(0.0, 0.0)
 		calories = bodycalc.NewDailyNormOfCalories("", 0.0, 0.0, 0, 0.0)
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu")
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu "+EMOJI_BACK)
 		sendMessage(msg)
 	case WeightStateBMI:
 		weight, err := strconv.ParseFloat(update.Message.Text, 64)
@@ -253,7 +264,12 @@ func ChooseState(update tgbotapi.Update, userStates map[int64]UserState) {
 
 		calories.Age = uint8(age)
 
-		msg := tgbotapi.NewMessage(chatId, "Выберите вашу физическую активность:")
+		aboutActivities := EMOJI_ONE + "Минимальная: сидячая работа, отсутствие спорта;\n\n" +
+			EMOJI_TWO + "Легкая: легкие физические упражнения около 3 раз за неделю, ежедневная утренняя зарядка, пешие прогулки;\n\n" +
+			EMOJI_THREE + "Средняя: спорт до 5 раз за неделю;\n\n" +
+			EMOJI_FOUR + "Высокая: активный образ жизни вкупе с ежедневными интенсивными тренировками;\n\n" +
+			EMOJI_FIVE + "Экстремальная: максимальная активность - спортивный образ жизни, тяжелый физический труд, длительные тяжелые тренировки каждый день."
+		msg := tgbotapi.NewMessage(chatId, "Выберите вашу физическую активность:\n"+aboutActivities)
 		msg.ReplyMarkup = activitiesMenu
 		sendMessage(msg)
 
@@ -269,10 +285,10 @@ func ChooseState(update tgbotapi.Update, userStates map[int64]UserState) {
 func SendDNOC(update tgbotapi.Update, dnoc *bodycalc.DailyNormOfCalories) {
 	chatID := update.CallbackQuery.Message.Chat.ID
 	dnocValue := dnoc.CalculateDailyNormOfCalories()
-	resString := fmt.Sprintf("Для сохранения веса суточная потебность в калориях возрастом %v лет и весом %.2f кг., при росте %.2f см. и вашей активности:\n%d ккал\n\n", dnoc.Age, dnoc.Weight, dnoc.Height, dnocValue)
+	resString := fmt.Sprintf("Для сохранения веса суточная потебность в калориях возрастом %v лет и весом %.2f кг., при росте %.2f см. и вашей активности:\n%d ккал%v\n\n", dnoc.Age, dnoc.Weight, dnoc.Height, dnocValue, EMOJI_CHECKMARK)
 	minCal := int(math.Round(float64(dnocValue) * 1.15))
 	maxCal := int(math.Round(float64(dnocValue) * 0.85))
-	resString += fmt.Sprintf("Для набора веса рекомендуется потребление %d ккал в день, а для похудения стоит употреблять порядка %d ккал в день.", minCal, maxCal)
+	resString += fmt.Sprintf("Для набора веса рекомендуется потребление %d ккал%v в день, а для похудения стоит употреблять порядка %d ккал%v в день.", minCal, EMOJI_CHECKMARK, maxCal, EMOJI_CHECKMARK)
 	msg := tgbotapi.NewMessage(chatID, resString)
 	sendMessage(msg)
 	UserStates[chatID] = InitialState
