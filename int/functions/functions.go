@@ -28,7 +28,7 @@ const (
 	minHeight       = 40.0
 	maxHeight       = 225.0
 	minAge          = 0
-	maxAge          = 100
+	maxAge          = 130
 	EMOJI_CHECKMARK = "\U00002705"
 	EMOJI_BACK      = "\U0001F519"
 	EMOJI_PLAY      = "\U000025B6"
