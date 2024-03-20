@@ -1,7 +1,7 @@
 package main
 
 import (
-	"body-calculator-tg-bot/int/functions"
+	"body-calculator-tg-bot/internal/functions"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"log"
