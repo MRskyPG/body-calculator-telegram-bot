@@ -8,6 +8,39 @@ CREATE TABLE food_products (
                                product_type VARCHAR(50) NOT NULL
 );
 
+
+CREATE OR REPLACE FUNCTION get_products_by_type(product_type_arg VARCHAR)
+    RETURNS TABLE (
+                      product_name VARCHAR(100),
+                      calories_per_100g DECIMAL,
+                      proteins DECIMAL,
+                      fats DECIMAL,
+                      carbohydrates DECIMAL,
+                      product_type VARCHAR(50)
+                  ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT food_products.product_name, food_products.calories_per_100g, food_products.proteins, food_products.fats, food_products.carbohydrates, food_products.product_type
+        FROM food_products
+        WHERE food_products.product_type = product_type_arg;
+END;
+$$ LANGUAGE plpgsql;
+
+-- select * from get_products_by_type('Рыбопродукты');
+
+CREATE OR REPLACE FUNCTION get_all_product_types()
+    RETURNS TABLE (
+        product_type VARCHAR(50)
+                  ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT DISTINCT food_products.product_type
+        FROM food_products;
+END;
+$$ LANGUAGE plpgsql;
+
+-- select * from get_all_product_types();
+
 INSERT INTO food_products (product_name, calories_per_100g, proteins, fats, carbohydrates, product_type)
 VALUES
     ('Свинина', 317, 27, 24, 0, 'Мясопродукты'),
