@@ -1,7 +1,9 @@
 package functions
 
 import (
+	sqlPkg "body-calculator-tg-bot/internal/sql"
 	"body-calculator-tg-bot/pkg/bodycalc"
+	"database/sql"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -20,6 +22,7 @@ const (
 	HeightStateDNOC
 	AgeStateDNOC
 	ActivityStateDNOC
+	ProductTypesState
 )
 
 const (
@@ -44,6 +47,7 @@ const (
 
 var (
 	Bot          *tgbotapi.BotAPI
+	DB           *sql.DB
 	bmi          = bodycalc.NewBMI(0.0, 0.0)
 	calories     = bodycalc.NewDailyNormOfCalories("", 0.0, 0.0, 0, 0.0)
 	UserStates   map[int64]UserState
@@ -56,6 +60,9 @@ var (
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(EMOJI_TWO+"Норма калорий", "calories"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(EMOJI_THREE+"Список продуктов (В процессе разработки)", "products"),
 		),
 	)
 	activitiesMenu = tgbotapi.NewInlineKeyboardMarkup(
@@ -100,6 +107,36 @@ func Callbacks(update tgbotapi.Update) {
 		sendMessage(msg)
 
 		UserStates[chatId] = SexStateDNOC
+	case "products":
+		var menuPrTypes tgbotapi.InlineKeyboardMarkup
+		UserStates[chatId] = ProductTypesState
+		DB, err := sqlPkg.GetDB()
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatId, "Ошибка! Не удалось подключиться к базе данных продуктов. Вернуться в меню: /menu "+EMOJI_BACK)
+			fmt.Println(err.Error())
+			sendMessage(msg)
+			UserStates[chatId] = InitialState
+			return
+		}
+		productsTypes, err := sqlPkg.GetProductTypes(DB)
+		if err != nil || productsTypes == nil {
+			msg := tgbotapi.NewMessage(chatId, "Ошибка! Не найдены типы продуктов. Вернуться в меню: /menu "+EMOJI_BACK)
+			fmt.Println(err.Error())
+			sendMessage(msg)
+			UserStates[chatId] = InitialState
+			return
+		}
+		for _, t := range productsTypes {
+			var row []tgbotapi.InlineKeyboardButton
+			btn := tgbotapi.NewInlineKeyboardButtonData(t, t)
+			row = append(row, btn)
+			menuPrTypes.InlineKeyboard = append(menuPrTypes.InlineKeyboard, row)
+		}
+		msg := tgbotapi.NewMessage(chatId, "Выберите тип продукта:")
+		msg.ReplyMarkup = menuPrTypes
+		sendMessage(msg)
+		/*TODO: Choose State*/
+
 	case "male":
 		calories.Sex = "male"
 		msg := tgbotapi.NewMessage(chatId, "Введите ваш вес:")
