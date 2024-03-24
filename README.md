@@ -1,5 +1,7 @@
 # Body Calculator Telegram Bot
 
+**Soon (will be working after finish project): <a href="https://t.me/body_calculator_bot">Body calculator bot</a>.**
+
 This bot will help you find out your BMI, as well as your daily calorie intake.
 
 Lib:
@@ -40,4 +42,4 @@ scoop install main/make
 If scoop is not installed: <a href="https://scoop.sh/">scoop</a>
 
 ---
-Mikhail Rogalsky 2024
+Mikhail Rogalsky 2024 (MIT LICENSE)
