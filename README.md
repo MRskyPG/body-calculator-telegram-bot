@@ -11,25 +11,30 @@ Lib:
 
 ## Run:
 
-Create **.env** file in the directory of this project, and paste your telegram token from <a href="http://t.me/BotFather">BotFather</a>.:
-```
-TG_BOT_TOKEN=...
-```
+Create **.env** file in the directory of this project, and paste your telegram token from <a href="http://t.me/BotFather">BotFather</a> and parameters for **Docker container** (See **.env.example**):
+
 
 For the first run:
 
 ```console
+make migrate
 make build
+make run
 ```
 
 Then:
 
-```console
-make run
-```
-
 To stop: **Ctrl + C** in terminal
 
+To stop container:
+```console
+make stop
+```
+
+To delete image:
+```console
+make migrate_down
+```
 ---
 
 ## Help
