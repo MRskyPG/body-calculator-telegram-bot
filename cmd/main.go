@@ -3,6 +3,8 @@ package main
 import (
 	"body-calculator-tg-bot/internal/db"
 	"body-calculator-tg-bot/internal/functions"
+	sqlPkg "body-calculator-tg-bot/internal/sql"
+	"database/sql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -18,12 +20,28 @@ func main() {
 	}
 
 	//Connect db
-	functions.DB, err = db.GetDB()
+	var DB *sql.DB
+	DB, err = db.GetDB()
 	if err != nil {
 		log.Fatalf("Can't connect to database: %s", err.Error())
 	}
-	defer functions.DB.Close()
+	defer DB.Close()
+	functions.SaveDB(DB)
 
+	//Get products types
+	prodTypes, err := sqlPkg.GetProductTypes(DB)
+	if err != nil || prodTypes == nil {
+		log.Fatalf("Cannot get product types from Database")
+	}
+	functions.SaveProductTypes(prodTypes)
+
+	//Get Products
+	err = functions.InitialHandlers(DB)
+	if err != nil {
+		log.Printf("Error with getting all products same type:", err.Error())
+	}
+
+	//Bot
 	functions.Bot, err = tgbotapi.NewBotAPI(os.Getenv("TG_BOT_TOKEN"))
 	if err != nil {
 		log.Fatalf("Uncorrect token.")

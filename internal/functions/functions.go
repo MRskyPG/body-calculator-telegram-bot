@@ -46,8 +46,11 @@ const (
 )
 
 var (
-	Bot          *tgbotapi.BotAPI
-	DB           *sql.DB
+	Bot           *tgbotapi.BotAPI
+	DB            *sql.DB
+	ProductsTypes []string
+	//Product_type(string) -> all products (string)
+	handlers     map[string]string
 	bmi          = bodycalc.NewBMI(0.0, 0.0)
 	calories     = bodycalc.NewDailyNormOfCalories("", 0.0, 0.0, 0, 0.0)
 	UserStates   map[int64]UserState
@@ -62,7 +65,7 @@ var (
 			tgbotapi.NewInlineKeyboardButtonData(EMOJI_TWO+"Норма калорий", "calories"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(EMOJI_THREE+"Список продуктов (В процессе разработки)", "products"),
+			tgbotapi.NewInlineKeyboardButtonData(EMOJI_THREE+"Список продуктов", "products"),
 		),
 	)
 	activitiesMenu = tgbotapi.NewInlineKeyboardMarkup(
@@ -90,81 +93,98 @@ var (
 func Callbacks(update tgbotapi.Update) {
 	cb := update.CallbackQuery.Data
 	chatId := update.CallbackQuery.Message.Chat.ID
-	switch cb {
-	case "menu":
+
+	//For products types
+	if handler, exists := handlers[cb]; exists {
+		msg := tgbotapi.NewMessage(chatId, handler)
 		UserStates[chatId] = InitialState
-		msg := tgbotapi.NewMessage(chatId, "Выберите необходимую опцию:")
-		msg.ReplyMarkup = menu
-		sendMessage(msg)
-	case "bmi":
-		msg := tgbotapi.NewMessage(chatId, "Введите ваш вес:")
-		sendMessage(msg)
-
-		UserStates[chatId] = WeightStateBMI
-	case "calories":
-		msg := tgbotapi.NewMessage(chatId, "Выберите ваш пол: ")
-		msg.ReplyMarkup = sexMenu
+		selectChoiceMenu := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Посмотреть другие продукты", "products"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Вернуться в меню", "menu"),
+			),
+		)
+		msg.ReplyMarkup = selectChoiceMenu
 		sendMessage(msg)
 
-		UserStates[chatId] = SexStateDNOC
-	case "products":
-		var menuPrTypes tgbotapi.InlineKeyboardMarkup
-		UserStates[chatId] = ProductTypesState
-		err := DB.Ping()
-		if err != nil {
-			msg := tgbotapi.NewMessage(chatId, "Ошибка! Не удалось подключиться к базе данных продуктов. Вернуться в меню: /menu "+EMOJI_BACK)
-			fmt.Println(err.Error())
-			sendMessage(msg)
+	} else {
+		switch cb {
+		case "menu":
 			UserStates[chatId] = InitialState
-			return
-		}
-		productsTypes, err := sqlPkg.GetProductTypes(DB)
-		if err != nil || productsTypes == nil {
-			msg := tgbotapi.NewMessage(chatId, "Ошибка! Не найдены типы продуктов. Вернуться в меню: /menu "+EMOJI_BACK)
-			fmt.Println(err.Error())
+			msg := tgbotapi.NewMessage(chatId, "Выберите необходимую опцию:")
+			msg.ReplyMarkup = menu
 			sendMessage(msg)
-			UserStates[chatId] = InitialState
-			return
+		case "bmi":
+			msg := tgbotapi.NewMessage(chatId, "Введите ваш вес:")
+			sendMessage(msg)
+
+			UserStates[chatId] = WeightStateBMI
+		case "calories":
+			msg := tgbotapi.NewMessage(chatId, "Выберите ваш пол: ")
+			msg.ReplyMarkup = sexMenu
+			sendMessage(msg)
+
+			UserStates[chatId] = SexStateDNOC
+		case "products":
+			var menuPrTypes tgbotapi.InlineKeyboardMarkup
+			UserStates[chatId] = ProductTypesState
+			err := DB.Ping()
+			if err != nil {
+				msg := tgbotapi.NewMessage(chatId, "Ошибка! Не удалось подключиться к базе данных продуктов. Вернуться в меню: /menu "+EMOJI_BACK)
+				fmt.Println(err.Error())
+				sendMessage(msg)
+				UserStates[chatId] = InitialState
+				return
+			}
+			if ProductsTypes == nil {
+				msg := tgbotapi.NewMessage(chatId, "Ошибка! Не найдены типы продуктов. Вернуться в меню: /menu "+EMOJI_BACK)
+				fmt.Println(err.Error())
+				sendMessage(msg)
+				UserStates[chatId] = InitialState
+				return
+			}
+			for _, t := range ProductsTypes {
+				var row []tgbotapi.InlineKeyboardButton
+				btn := tgbotapi.NewInlineKeyboardButtonData(t, t)
+				row = append(row, btn)
+				menuPrTypes.InlineKeyboard = append(menuPrTypes.InlineKeyboard, row)
+			}
+			msg := tgbotapi.NewMessage(chatId, "Выберите тип продукта:")
+			msg.ReplyMarkup = menuPrTypes
+			sendMessage(msg)
+			//Then see "if" above switch
+
+		case "male":
+			calories.Sex = "male"
+			msg := tgbotapi.NewMessage(chatId, "Введите ваш вес:")
+			sendMessage(msg)
+
+			UserStates[chatId] = WeightStateDNOC
+		case "female":
+			calories.Sex = "female"
+			msg := tgbotapi.NewMessage(chatId, "Введите ваш вес:")
+			sendMessage(msg)
+
+			UserStates[chatId] = WeightStateDNOC
+		case "minimal":
+			calories.Activity = bodycalc.MINIMAL
+			SendDNOC(update, calories)
+		case "light":
+			calories.Activity = bodycalc.LIGHT
+			SendDNOC(update, calories)
+		case "medium":
+			calories.Activity = bodycalc.MEDIUM
+			SendDNOC(update, calories)
+		case "high":
+			calories.Activity = bodycalc.HIGH
+			SendDNOC(update, calories)
+		case "extremal":
+			calories.Activity = bodycalc.EXTREMAL
+			SendDNOC(update, calories)
+
 		}
-		for _, t := range productsTypes {
-			var row []tgbotapi.InlineKeyboardButton
-			btn := tgbotapi.NewInlineKeyboardButtonData(t, t)
-			row = append(row, btn)
-			menuPrTypes.InlineKeyboard = append(menuPrTypes.InlineKeyboard, row)
-		}
-		msg := tgbotapi.NewMessage(chatId, "Выберите тип продукта:")
-		msg.ReplyMarkup = menuPrTypes
-		sendMessage(msg)
-		/*TODO: Choose State*/
-
-	case "male":
-		calories.Sex = "male"
-		msg := tgbotapi.NewMessage(chatId, "Введите ваш вес:")
-		sendMessage(msg)
-
-		UserStates[chatId] = WeightStateDNOC
-	case "female":
-		calories.Sex = "female"
-		msg := tgbotapi.NewMessage(chatId, "Введите ваш вес:")
-		sendMessage(msg)
-
-		UserStates[chatId] = WeightStateDNOC
-	case "minimal":
-		calories.Activity = bodycalc.MINIMAL
-		SendDNOC(update, calories)
-	case "light":
-		calories.Activity = bodycalc.LIGHT
-		SendDNOC(update, calories)
-	case "medium":
-		calories.Activity = bodycalc.MEDIUM
-		SendDNOC(update, calories)
-	case "high":
-		calories.Activity = bodycalc.HIGH
-		SendDNOC(update, calories)
-	case "extremal":
-		calories.Activity = bodycalc.EXTREMAL
-		SendDNOC(update, calories)
-
 	}
 }
 
@@ -186,13 +206,6 @@ func Commands(update tgbotapi.Update) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu "+EMOJI_BACK)
 		sendMessage(msg)
 	}
-}
-
-func sendMessage(msg tgbotapi.Chattable) {
-	if _, err := Bot.Send(msg); err != nil {
-		log.Panicf("Failed to send message: %v", err)
-	}
-	log.Println("Message was sended.")
 }
 
 func ChooseState(update tgbotapi.Update, userStates map[int64]UserState) {
@@ -323,6 +336,13 @@ func ChooseState(update tgbotapi.Update, userStates map[int64]UserState) {
 
 }
 
+func sendMessage(msg tgbotapi.Chattable) {
+	if _, err := Bot.Send(msg); err != nil {
+		log.Panicf("Failed to send message: %v", err)
+	}
+	log.Println("Message was sended.")
+}
+
 func SendDNOC(update tgbotapi.Update, dnoc *bodycalc.DailyNormOfCalories) {
 	chatID := update.CallbackQuery.Message.Chat.ID
 	dnocValue := dnoc.CalculateDailyNormOfCalories()
@@ -333,4 +353,41 @@ func SendDNOC(update tgbotapi.Update, dnoc *bodycalc.DailyNormOfCalories) {
 	msg := tgbotapi.NewMessage(chatID, resString)
 	sendMessage(msg)
 	UserStates[chatID] = InitialState
+}
+
+//For products the same type
+
+func InitialHandlers(db *sql.DB) error {
+	handlers = make(map[string]string)
+
+	for _, t := range ProductsTypes {
+		products, err := sqlPkg.GetProductsByType(db, t)
+		if err != nil {
+			return err
+		}
+		handlers[t] = DescriptionOfProducts(products)
+	}
+	return nil
+}
+
+//Preparing string with product the same type
+
+func DescriptionOfProducts(products []sqlPkg.Product) string {
+	var res string
+	count := 1
+	for _, product := range products {
+		tmp := fmt.Sprintf("➤ %d. %s:\n\t• Калории: %v ккал.\n\t• Белки: %v г.\n\t• Жиры: %v г.\n\t• Углеводы: %v г.\n\n",
+			count, product.ProductName, product.Calories, product.Proteins, product.Fats, product.Carbohydrates)
+		res += tmp
+		count++
+	}
+	return res
+}
+
+func SaveDB(db *sql.DB) {
+	DB = db
+}
+
+func SaveProductTypes(pt []string) {
+	ProductsTypes = pt
 }
