@@ -1,13 +1,13 @@
+include .env
+.PHONY: migrate
+migrate:
+	 docker build -t body-calculator-bot-image .
+build:
+	 go mod download
+	 docker run --name body-calculator-database -p 5439:5432 -d --rm -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) -e POSTGRES_DB=$(POSTGRES_DATABASE) -e POSTGRES_USER=$(POSTGRES_USER) body-calculator-bot-image
 run:
 	go run ./cmd/main.go
-
-build:
-	go mod download
-	docker run --name productsBase -e POSTGRES_PASSWORD=qwerty --rm -d -p 5436:5432 postgres
-
-
-migrate:
-	migrate -path ./schema -database 'postgres://postgres:qwerty@localhost:5436/postgres?sslmode=disable' up
-
-migrate_drop:
-	migrate -path ./schema -database 'postgres://postgres:qwerty@localhost:5436/postgres?sslmode=disable' down
+stop:
+	docker stop body-calculator-database
+migrate_down:
+	docker rmi body-calculator-bot-image

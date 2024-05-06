@@ -110,7 +110,7 @@ func Callbacks(update tgbotapi.Update) {
 	case "products":
 		var menuPrTypes tgbotapi.InlineKeyboardMarkup
 		UserStates[chatId] = ProductTypesState
-		DB, err := sqlPkg.GetDB()
+		err := DB.Ping()
 		if err != nil {
 			msg := tgbotapi.NewMessage(chatId, "Ошибка! Не удалось подключиться к базе данных продуктов. Вернуться в меню: /menu "+EMOJI_BACK)
 			fmt.Println(err.Error())
@@ -315,6 +315,10 @@ func ChooseState(update tgbotapi.Update, userStates map[int64]UserState) {
 		msg := tgbotapi.NewMessage(chatId, "Ошибка. Выберите вашу физическую активность:")
 		msg.ReplyMarkup = activitiesMenu
 		sendMessage(msg)
+	case ProductTypesState:
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Неизвестная команда. Вернуться в меню: /menu "+EMOJI_BACK)
+		sendMessage(msg)
+		userStates[chatId] = InitialState
 	}
 
 }

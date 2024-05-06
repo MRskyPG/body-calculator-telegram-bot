@@ -1,6 +1,7 @@
 package main
 
 import (
+	"body-calculator-tg-bot/internal/db"
 	"body-calculator-tg-bot/internal/functions"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -15,6 +16,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load .env: %v", err)
 	}
+
+	//Connect db
+	functions.DB, err = db.GetDB()
+	if err != nil {
+		log.Fatalf("Can't connect to database: %s", err.Error())
+	}
+	defer functions.DB.Close()
 
 	functions.Bot, err = tgbotapi.NewBotAPI(os.Getenv("TG_BOT_TOKEN"))
 	if err != nil {
